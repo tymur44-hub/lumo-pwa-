@@ -16,6 +16,34 @@
 </head>
 <body>
 <script>window.LUMO_PWA = { sw: 'lumo-sw.js' };</script>
-<script src="https://foniukmpiukuwpcdvdhp.supabase.co/functions/v1/lumo"></script>
+<script>
+/* Код Lumo грузим с российского посредника, а если он недоступен — напрямую (и наоборот: запоминаем, что сработало) */
+(function(){
+  var P='https://api.volshebny-mir.ru/functions/v1/lumo', D='https://foniukmpiukuwpcdvdhp.supabase.co/functions/v1/lumo';
+  var last=null; try{ last=localStorage.getItem('lm_ld'); }catch(e){}
+  var list = last==='d' ? [[D,'d'],[P,'p']] : [[P,'p'],[D,'d']];
+  var done=false;
+  function fail(){
+    if(done) return;
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0c0d1a;color:#eef0ff;font:16px system-ui;text-align:center;padding:24px';
+    d.innerHTML='<div>Не удаётся загрузить Lumo.<br>Проверьте интернет и попробуйте ещё раз.</div><button style="padding:12px 22px;border:0;border-radius:14px;background:#7c5cff;color:#fff;font:600 16px system-ui">Повторить</button>';
+    d.querySelector('button').onclick=function(){ location.reload(); };
+    document.body.appendChild(d);
+  }
+  function load(i){
+    if(done) return;
+    if(i>=list.length) return fail();
+    var s=document.createElement('script'), t;
+    var next=function(){ clearTimeout(t); s.onload=s.onerror=null; load(i+1); };
+    s.onload=function(){ done=true; clearTimeout(t); try{ localStorage.setItem('lm_ld',list[i][1]); }catch(e){} };
+    s.onerror=next;
+    t=setTimeout(next, i===0?7000:20000);
+    s.src=list[i][0]+'?t='+Math.floor(Date.now()/60000);
+    document.body.appendChild(s);
+  }
+  load(0);
+})();
+</script>
 </body>
 </html>
