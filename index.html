@@ -19,7 +19,7 @@
 <script>
 /* Код Lumo грузим с российского посредника, а если он недоступен — напрямую (и наоборот: запоминаем, что сработало) */
 (function(){
-  var P='https://api.volshebny-mir.ru/functions/v1/lumo', D='https://foniukmpiukuwpcdvdhp.supabase.co/functions/v1/lumo';
+  var P='https://api.lumomess.ru/functions/v1/lumo', D='https://foniukmpiukuwpcdvdhp.supabase.co/functions/v1/lumo';
   var last=null; try{ last=localStorage.getItem('lm_ld'); }catch(e){}
   var list = last==='d' ? [[D,'d'],[P,'p']] : [[P,'p'],[D,'d']];
   var done=false;
