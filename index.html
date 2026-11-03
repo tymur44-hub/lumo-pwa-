@@ -17,6 +17,13 @@
 <body>
 <script>window.LUMO_PWA = { sw: 'lumo-sw.js' };</script>
 <script>
+/* Регистрируем service worker сразу: он кэширует оболочку сайта и код мессенджера,
+   чтобы при следующем открытии без интернета чаты и переписка всё равно показывались */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register(window.LUMO_PWA.sw).catch(function(){});
+}
+</script>
+<script>
 /* Код Lumo грузим с российского посредника, а если он недоступен — напрямую (и наоборот: запоминаем, что сработало) */
 (function(){
   var P='https://api.lumomess.ru/functions/v1/lumo', D='https://foniukmpiukuwpcdvdhp.supabase.co/functions/v1/lumo';

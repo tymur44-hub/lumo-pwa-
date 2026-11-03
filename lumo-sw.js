@@ -31,8 +31,43 @@ async function decryptPush(d) {
   return td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, key, raw.slice(12)));
 }
 
-self.addEventListener('install', () => self.skipWaiting());
+// Офлайн-кэш: оболочка сайта и сам код мессенджера (app13), чтобы чаты открывались без интернета
+const SHELL_CACHE = 'lumo-shell-v1';
+const SHELL_URLS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+
+self.addEventListener('install', (e) => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(SHELL_CACHE).then((c) => Promise.all(SHELL_URLS.map((u) => c.add(u).catch(() => {})))));
+});
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+
+function isAppScript(url) {
+  return url.pathname === '/functions/v1/lumo' && (url.hostname === 'api.lumomess.ru' || url.hostname.endsWith('.supabase.co'));
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  let url;
+  try { url = new URL(req.url); } catch (_) { return; }
+  const shell = url.origin === self.location.origin;
+  const appScript = isAppScript(url);
+  if (!shell && !appScript) return; // данные (REST/RPC/медиа) всегда идут в сеть — их кэширует IndexedDB в самом приложении
+  // код мессенджера грузится с "?t=..." для обхода кэша браузера — ключ в кэше SW без этого параметра
+  const cacheKey = appScript ? url.origin + url.pathname : req;
+  event.respondWith((async () => {
+    const cache = await caches.open(SHELL_CACHE);
+    try {
+      const fresh = await fetch(req);
+      if (fresh && (fresh.ok || fresh.type === 'opaque')) cache.put(cacheKey, fresh.clone());
+      return fresh;
+    } catch (err) {
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+      throw err;
+    }
+  })());
+});
 
 self.addEventListener('push', (event) => {
   let d = {};
