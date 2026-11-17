@@ -15,6 +15,41 @@
 <style>html,body{margin:0;height:100%;background:#0c0d1a}</style>
 </head>
 <body>
+<script>
+/* Ссылка на профиль (lumomess.ru/#@имя) или приглашение (#+код): если установлено приложение Lumo — открываем его.
+   Android: сразу открывается приложение, а если его нет — остаётся сайт.
+   iPhone: без App Store система не даёт открыть приложение молча, поэтому показываем кнопку «Открыть в приложении». */
+(function(){
+  var h = location.hash || '';
+  if (!/^#[@+][A-Za-z0-9_]{3,32}$/.test(h)) return;
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+  if (standalone || /[?&]web=1/.test(location.search)) return;
+  var key = 'lm_app_' + h, tried = false;
+  try { tried = sessionStorage.getItem(key) === '1'; sessionStorage.setItem(key, '1'); } catch (e) {}
+  var ua = navigator.userAgent || '';
+  var app = 'lumo://open' + h;
+  if (/Android/i.test(ua)) {
+    if (tried) return;
+    var back = location.origin + location.pathname + '?web=1' + h;
+    location.replace('intent://open' + h + '#Intent;scheme=lumo;package=ru.volshebnymir.lumo;S.browser_fallback_url=' + encodeURIComponent(back) + ';end');
+    return;
+  }
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document)) {
+    var show = function(){
+      var who = h.charAt(1) === '@' ? 'профиль ' + h.slice(1) : 'приглашение';
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:2147483647;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-radius:20px;background:rgba(26,28,54,.96);box-shadow:0 12px 40px rgba(0,0,0,.45);color:#eef0ff;font:15px -apple-system,system-ui;transform:translateY(140%);transition:transform .45s cubic-bezier(.2,.9,.3,1.2)';
+      d.innerHTML = '<img src="apple-touch-icon.png" style="width:42px;height:42px;border-radius:11px"><div style="flex:1;min-width:0"><b style="display:block">Открыть в приложении Lumo</b><span style="opacity:.7;font-size:13px">' + who + '</span></div>' +
+        '<a href="' + app + '" style="padding:10px 16px;border-radius:14px;background:linear-gradient(135deg,#7c5cff,#22c1ff);color:#fff;font-weight:700;text-decoration:none">Открыть</a>' +
+        '<button aria-label="Закрыть" style="border:0;background:none;color:#8d90b8;font-size:22px;padding:4px 6px">&times;</button>';
+      d.querySelector('button').onclick = function(){ d.style.transform = 'translateY(140%)'; setTimeout(function(){ d.remove(); }, 450); };
+      document.body.appendChild(d);
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ d.style.transform = 'none'; }); });
+    };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  }
+})();
+</script>
 <script>window.LUMO_PWA = { sw: 'lumo-sw.js' };</script>
 <script>
 /* Регистрируем service worker сразу: он кэширует оболочку сайта и код мессенджера,
