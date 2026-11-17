@@ -50,6 +50,10 @@
   }
 })();
 </script>
+<script>
+/* возврат после оплаты ЮMoney: окошко оплаты сообщает Lumo и закрывается само */
+(function(){ if(!/[?&]lumo_paid\b/.test(location.search)) return; try{ if(window.opener&&window.opener!==window){ window.opener.postMessage({lumo_paid:1},'*'); window.close(); } }catch(e){} })();
+</script>
 <script>window.LUMO_PWA = { sw: 'lumo-sw.js' };</script>
 <script>
 /* Регистрируем service worker сразу: он кэширует оболочку сайта и код мессенджера,
